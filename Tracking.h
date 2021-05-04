@@ -188,6 +188,9 @@ protected:
     void UpdateLastFrame();
     bool TrackWithMotionModel();
     float EquationTen(float lastPos[3], float currentPos[3]); //Charbel
+    //cv::Mat computeOptimalPoseEstimate(const cv::Mat featureCorrespondances);
+    cv::Mat computeOptimalPoseEstimate();
+    cv::Mat computePoseEstimate(float theta);
     bool PredictStateIMU();
 
     bool Relocalization();

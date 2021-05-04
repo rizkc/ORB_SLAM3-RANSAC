@@ -98,7 +98,7 @@ int main(int argc, char **argv)
         //    T = tframe-vTimestamps[ni-1];
 
         //if(ttrack<T)
-            usleep(1e6*5);//(T-ttrack)*1e8); //1e6
+            usleep(1e6*5);//(T-ttrack)*1e8); //Charbel 1e6 
     }
 
     // Stop all threads
