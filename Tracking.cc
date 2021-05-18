@@ -2547,7 +2547,7 @@ bool Tracking::TrackWithMotionModel()
         return nmatchesMap>=10;
 
 }
-
+/*
 float Tracking::EquationTen(float lastPos[3], float currentPos[3]) //Charbel
 {
     float theta;
@@ -2594,11 +2594,13 @@ cv::Mat Tracking::computePoseEstimate(float theta) //&?
 
 // Sebastian
 // RANSAC algorithm to estimate the optimal pose for the given frame-pair"
-cv::Mat Tracking::computeOptimalPoseEstimate()//featureCorrespondances)
+cv::Mat Tracking::computeOptimalPoseEstimate(float featureCorrespondances[])
 {
     
     //std::featureCorrespondances<int> listSize; // number of correspondances
-    std::list<int> featureCorrespondances = {1,2,3,4,5,6,7,8,9,0}; 
+    //std::list<int> featureCorrespondances = {1,2,3,4,5,6,7,8,9,0};
+    //int featureCorrespondances[] = {1,2,3,4,5,6,7,8,9,0};  
+    int listSize = sizeof(featureCorrespondances);
     // Generate random keypoint index
     //std::random_device rd;
     //std::default_random_engine eng(rd());
@@ -2616,7 +2618,7 @@ cv::Mat Tracking::computeOptimalPoseEstimate()//featureCorrespondances)
     {
         
         //cout << distr(eng); // generate random index for keypoint
-        float randIdx = rand() % listSize;
+        int randIdx = rand() % listSize;
 
         float keyPointFrame1[] = featureCorrespondances(0, randIdx); // keypoint in frame 1
         float keyPointFrame2[] = featureCorrespondances(1, randIdx); // keypoint in frame 2
@@ -2626,8 +2628,8 @@ cv::Mat Tracking::computeOptimalPoseEstimate()//featureCorrespondances)
         float theta = EquationTen(keyPointFrame1, keyPointFrame2);
         cv::Mat PHypothesis = computePoseEstimate(theta);
 
-        "Check every other keypoint for inliers/outliers, excluding the randomly selected hypothesis datapoint"
-        for (int i = 0; i < listSize-1; n++) 
+        //"Check every other keypoint for inliers/outliers, excluding the randomly selected hypothesis datapoint"
+        for (int i = 0; i < listSize-1; i++) 
 	{
             if (i != randIdx) // Check so point is not the one our hypothesis is based on
             {

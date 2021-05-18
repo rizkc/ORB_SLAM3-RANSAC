@@ -72,9 +72,9 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint>& vKeys1,
     {
         vAllIndices.push_back(i);
     }
-/*
+
     // Generate sets of 8 points for each RANSAC iteration
-    mvSets = vector< vector<size_t> >(mMaxIterations,vector<size_t>(8,0)); //Charbel
+    mv8Sets = vector< vector<size_t> >(mMaxIterations,vector<size_t>(8,0)); //Charbel
 
     DUtils::Random::SeedRandOnce(0);
 
@@ -88,13 +88,13 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint>& vKeys1,
             int randi = DUtils::Random::RandomInt(0,vAvailableIndices.size()-1);
             int idx = vAvailableIndices[randi];
 
-            mvSets[it][j] = idx;
+            mv8Sets[it][j] = idx;
 
             vAvailableIndices[randi] = vAvailableIndices.back();
             vAvailableIndices.pop_back();
         }
     }
-*/
+
     // Generate sets of 1 point for each RANSAC iteration
     mvSets = vector< vector<size_t> >(mMaxIterations,vector<size_t>(1,0)); //Charbel
 
@@ -147,7 +147,7 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint>& vKeys1,
         return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,minParallax,50);
     }
 }
-/*
+
 void TwoViewReconstruction::FindHomography(vector<bool> &vbMatchesInliers, float &score, cv::Mat &H21)
 {
     // Number of putative matches
@@ -177,7 +177,7 @@ void TwoViewReconstruction::FindHomography(vector<bool> &vbMatchesInliers, float
         // Select a minimum set
         for(size_t j=0; j<8; j++)
         {
-            int idx = mvSets[it][j];
+            int idx = mv8Sets[it][j];
 
             vPn1i[j] = vPn1[mvMatches12[idx].first];
             vPn2i[j] = vPn2[mvMatches12[idx].second];
@@ -197,7 +197,7 @@ void TwoViewReconstruction::FindHomography(vector<bool> &vbMatchesInliers, float
         }
     }
 }
-
+/*
 void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, float &score, cv::Mat &F21)
 {
     // Number of putative matches
@@ -248,56 +248,6 @@ void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, floa
     }
 }
 */
-
-void TwoViewReconstruction::FindHomography(vector<bool> &vbMatchesInliers, float &score, cv::Mat &H21)
-{
-    // Number of putative matches
-    const int N = mvMatches12.size();
-
-    // Normalize coordinates
-    vector<cv::Point2f> vPn1, vPn2;
-    cv::Mat T1, T2;
-    Normalize(mvKeys1,vPn1, T1);
-    Normalize(mvKeys2,vPn2, T2);
-    cv::Mat T2inv = T2.inv();
-
-    // Best Results variables
-    score = 0.0;
-    vbMatchesInliers = vector<bool>(N,false);
-
-    // Iteration variables
-    vector<cv::Point2f> vPn1i(1);
-    vector<cv::Point2f> vPn2i(1);
-    cv::Mat H21i, H12i;
-    vector<bool> vbCurrentInliers(N,false);
-    float currentScore;
-
-    // Perform all RANSAC iterations and save the solution with highest score
-    for(int it=0; it<mMaxIterations; it++)
-    {
-        // Select a minimum set
-        for(size_t j=0; j<1; j++)
-        {
-            int idx = mvSets[it][j];
-
-            vPn1i[j] = vPn1[mvMatches12[idx].first];
-            vPn2i[j] = vPn2[mvMatches12[idx].second];
-        }
-
-        cv::Mat Hn = ComputeH21(vPn1i,vPn2i);
-        H21i = T2inv*Hn*T1;
-        H12i = H21i.inv();
-
-        currentScore = CheckHomography(H21i, H12i, vbCurrentInliers, mSigma);
-
-        if(currentScore>score)
-        {
-            H21 = H21i.clone();
-            vbMatchesInliers = vbCurrentInliers;
-            score = currentScore;
-        }
-    }
-}
 
 void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, float &score, cv::Mat &F21)
 {
