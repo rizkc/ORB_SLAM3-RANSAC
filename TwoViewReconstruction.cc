@@ -384,7 +384,7 @@ cv::Mat TwoViewReconstruction::ComputeF21(const vector<cv::Point2f> &vP1,const v
 cv::Mat TwoViewReconstruction::ComputeF21(const vector<cv::Point2f> &vP1,const vector<cv::Point2f> &vP2)
 {
     const int N = vP1.size();
-    float L = 0.0;
+    float L = 0.76; //KITTI setup
     float rho = 1.0;
 
     cv::Mat E(N,9,CV_32F);
