@@ -43,7 +43,7 @@ public:
 private:
 
     void FindHomography(std::vector<bool> &vbMatchesInliers, float &score, cv::Mat &H21);
-    void FindFundamental(std::vector<bool> &vbInliers, float &score, cv::Mat &F21);
+    void FindFundamental(std::vector<bool> &vbInliers, float &score, cv::Mat &F21);//, const cv::Mat &K); //Charbel
 
     cv::Mat ComputeH21(const std::vector<cv::Point2f> &vP1, const std::vector<cv::Point2f> &vP2);
     cv::Mat ComputeF21(const std::vector<cv::Point2f> &vP1, const std::vector<cv::Point2f> &vP2);
@@ -92,6 +92,9 @@ private:
     // Ransac sets
     std::vector<std::vector<size_t> > mvSets;
     std::vector<std::vector<size_t> > mv8Sets;
+
+    //Ransac timer
+    double ttrack_ransac;
 
 };
 

@@ -272,6 +272,9 @@ void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, floa
     vector<bool> vbCurrentInliers(N,false);
     float currentScore;
 
+    //Start of time interval for RANSAC
+    std::chrono::steady_clock::time_point t1_ransac = std::chrono::steady_clock::now();
+
     // Perform all RANSAC iterations and save the solution with highest score
     for(int it=0; it<mMaxIterations; it++)
     {
@@ -298,6 +301,21 @@ void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, floa
             score = currentScore;
         }
     }
+
+    //End of time interval for RANSAC
+    std::chrono::steady_clock::time_point t2_ransac = std::chrono::steady_clock::now();
+
+    double ttrack_ransac = std::chrono::duration_cast<std::chrono::duration<double> >(t2_ransac - t1_ransac).count();
+
+    //Print RANSAC-time to file
+    //cout << "printing  ransac time period: " << ttrack_ransac << endl << endl;
+    ofstream myfile ("ransac_times.csv", myfile.out | myfile.app);
+    if (myfile.is_open())
+    {
+        myfile << ttrack_ransac << endl;
+        myfile.close();
+    }
+    else cout << "Unable to open file";
 }
 
 
