@@ -312,7 +312,7 @@ void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, floa
 
     //Print RANSAC-time to file
     //cout << "printing  ransac time period: " << ttrack_ransac << endl << endl;
-    ofstream myfile ("ransac_times.csv", myfile.out | myfile.app);
+    ofstream myfile ("5p_resample_ransac_times.csv", myfile.out | myfile.app);
     if (myfile.is_open())
     {
         myfile << ttrack_ransac << endl;

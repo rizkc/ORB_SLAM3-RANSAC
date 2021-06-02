@@ -74,7 +74,7 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint>& vKeys1,
     }
 
     // Generate sets of 8 points for each RANSAC iteration
-    mv8Sets = vector< vector<size_t> >(mMaxIterations,vector<size_t>(8,0));
+    mvSets = vector< vector<size_t> >(mMaxIterations,vector<size_t>(8,0));
 
     DUtils::Random::SeedRandOnce(0);
 
@@ -84,28 +84,6 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint>& vKeys1,
 
         // Select a minimum set
         for(size_t j=0; j<8; j++)
-        {
-            int randi = DUtils::Random::RandomInt(0,vAvailableIndices.size()-1);
-            int idx = vAvailableIndices[randi];
-
-            mv8Sets[it][j] = idx;
-
-            vAvailableIndices[randi] = vAvailableIndices.back();
-            vAvailableIndices.pop_back();
-        }
-    }
-
-    // Generate sets of 5 point for each RANSAC iteration
-    mvSets = vector< vector<size_t> >(mMaxIterations,vector<size_t>(5,0)); //Charbel
-
-    DUtils::Random::SeedRandOnce(0);
-
-    for(int it=0; it<mMaxIterations; it++)
-    {
-        vAvailableIndices = vAllIndices;
-
-        // Select a minimum set
-        for(size_t j=0; j<5; j++)
         {
             int randi = DUtils::Random::RandomInt(0,vAvailableIndices.size()-1);
             int idx = vAvailableIndices[randi];
@@ -171,13 +149,16 @@ void TwoViewReconstruction::FindHomography(vector<bool> &vbMatchesInliers, float
     vector<bool> vbCurrentInliers(N,false);
     float currentScore;
 
+    //Start of time interval for RANSAC
+    std::chrono::steady_clock::time_point t1_ransac = std::chrono::steady_clock::now();
+
     // Perform all RANSAC iterations and save the solution with highest score
     for(int it=0; it<mMaxIterations; it++)
     {
         // Select a minimum set
         for(size_t j=0; j<8; j++)
         {
-            int idx = mv8Sets[it][j];
+            int idx = mvSets[it][j];
 
             vPn1i[j] = vPn1[mvMatches12[idx].first];
             vPn2i[j] = vPn2[mvMatches12[idx].second];
@@ -196,8 +177,24 @@ void TwoViewReconstruction::FindHomography(vector<bool> &vbMatchesInliers, float
             score = currentScore;
         }
     }
+
+    //End of time interval for RANSAC
+    std::chrono::steady_clock::time_point t2_ransac = std::chrono::steady_clock::now();
+
+    double ttrack_ransac = std::chrono::duration_cast<std::chrono::duration<double> >(t2_ransac - t1_ransac).count();
+
+    //Print RANSAC-time to file
+    //cout << "printing  ransac time period: " << ttrack_ransac << endl << endl;
+    ofstream myfile ("ransac_times.csv", myfile.out | myfile.app);
+    if (myfile.is_open())
+    {
+        myfile << ttrack_ransac << endl;
+        myfile.close();
+    }
+    else cout << "Unable to open file";
 }
-/*
+
+
 void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, float &score, cv::Mat &F21)
 {
     // Number of putative matches
@@ -247,76 +244,6 @@ void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, floa
         }
     }
 }
-*/
-
-void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, float &score, cv::Mat &F21)//, const cv::Mat &K)
-{
-    // Number of putative matches
-    const int N = vbMatchesInliers.size();
-
-    // Normalize coordinates
-    vector<cv::Point2f> vPn1, vPn2;
-    cv::Mat T1, T2;
-    Normalize(mvKeys1,vPn1, T1);
-    Normalize(mvKeys2,vPn2, T2);
-    cv::Mat T2t = T2.t();
-
-    // Best Results variables
-    score = 0.0;
-    vbMatchesInliers = vector<bool>(N,false);
-
-    // Iteration variables
-    vector<cv::Point2f> vPn1i(5);
-    vector<cv::Point2f> vPn2i(5);
-    cv::Mat F21i;
-    vector<bool> vbCurrentInliers(N,false);
-    float currentScore;
-
-    //Start of time interval for RANSAC
-    std::chrono::steady_clock::time_point t1_ransac = std::chrono::steady_clock::now();
-
-    // Perform all RANSAC iterations and save the solution with highest score
-    for(int it=0; it<mMaxIterations; it++)
-    {
-        // Select a minimum set
-        for(int j=0; j<5; j++)
-        {
-            int idx = mvSets[it][j];
-
-            vPn1i[j] = vPn1[mvMatches12[idx].first];
-            vPn2i[j] = vPn2[mvMatches12[idx].second];
-        }
-
-        cv::Mat Fn = findEssentialMat(vPn1i,vPn2i,mK); //ComputeF21(vPn1i,vPn2i);
-	Fn = mK.t().inv()*Fn*mK.inv();
-
-        F21i = T2t*Fn*T1;
-
-        currentScore = CheckFundamental(F21i, vbCurrentInliers, mSigma);
-
-        if(currentScore>score)
-        {
-            F21 = F21i.clone();
-            vbMatchesInliers = vbCurrentInliers;
-            score = currentScore;
-        }
-    }
-
-    //End of time interval for RANSAC
-    std::chrono::steady_clock::time_point t2_ransac = std::chrono::steady_clock::now();
-
-    double ttrack_ransac = std::chrono::duration_cast<std::chrono::duration<double> >(t2_ransac - t1_ransac).count();
-
-    //Print RANSAC-time to file
-    //cout << "printing  ransac time period: " << ttrack_ransac << endl << endl;
-    ofstream myfile ("5p_ransac_times.csv", myfile.out | myfile.app);
-    if (myfile.is_open())
-    {
-        myfile << ttrack_ransac << endl;
-        myfile.close();
-    }
-    else cout << "Unable to open file";
-}
 
 
 cv::Mat TwoViewReconstruction::ComputeH21(const vector<cv::Point2f> &vP1, const vector<cv::Point2f> &vP2)
@@ -361,7 +288,6 @@ cv::Mat TwoViewReconstruction::ComputeH21(const vector<cv::Point2f> &vP1, const 
     return vt.row(8).reshape(0, 3);
 }
 
-
 cv::Mat TwoViewReconstruction::ComputeF21(const vector<cv::Point2f> &vP1,const vector<cv::Point2f> &vP2)
 {
     const int N = vP1.size();
@@ -399,42 +325,6 @@ cv::Mat TwoViewReconstruction::ComputeF21(const vector<cv::Point2f> &vP1,const v
     return  u*cv::Mat::diag(w)*vt;
 }
 
-/*
-cv::Mat TwoViewReconstruction::ComputeF21(const vector<cv::Point2f> &vP1,const vector<cv::Point2f> &vP2)
-{
-    const int N = vP1.size();
-    float L = 0.76; //KITTI setup
-    float rho = 1.0;
-
-    cv::Mat E(N,9,CV_32F);
-
-    for(int i=0; i<N; i++)
-    {
-        const float u1 = vP1[i].x;
-        const float v1 = vP1[i].y;
-	//const float w1 = vP1[i].z;
-        const float u2 = vP2[i].x;
-        const float v2 = vP2[i].y;
-	//const float w2 = vP2[i].z;
-
-	float theta = -2*tan((v2-v1) / (u2+u1));
-	//float theta = -2*tan((v2*w1-v1*w2) / (u2*w1+u1*w2));
-
-        E.at<float>(i,0) = 0.0;
-        E.at<float>(i,1) = 0.0;
-        E.at<float>(i,2) = rho*sin(theta/2) - L*sin(theta);
-        E.at<float>(i,3) = 0.0;
-        E.at<float>(i,4) = 0.0;
-        E.at<float>(i,5) = L + rho*cos(theta/2) - L*cos(theta);
-        E.at<float>(i,6) = L*sin(theta) + rho*sin(theta/2);
-        E.at<float>(i,7) = L - rho*cos(theta/2) - L*cos(theta);
-        E.at<float>(i,8) = 0.0;
-        
-    }
-
-    return  E.reshape(0, 3);
-}
-*/
 float TwoViewReconstruction::CheckHomography(const cv::Mat &H21, const cv::Mat &H12, vector<bool> &vbMatchesInliers, float sigma)
 {   
     const int N = mvMatches12.size();
