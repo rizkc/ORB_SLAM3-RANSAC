@@ -1789,15 +1789,14 @@ void Tracking::Track()
         mpFrameDrawer->Update(this);
         if(!mCurrentFrame.mTcw.empty())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
-
         if(bOK || mState==RECENTLY_LOST)
         {
             // Update motion model
-	    if(mTime_LocalMapTrack > 1000000.0)  //Charbel
+	    if(!mLastFrame.mTcw.empty()) //Charbel
 	    {
 		mVelocityBefore = mVelocity;	
 		cv::Mat lastPos = mpLastKeyFrame->GetTranslation();
-		cout << lastPos << endl << endl;//"-------motion model updated------------" << endl << endl;
+		//cout << lastPos << endl << "-------motion model updated 2------------" << endl << endl;
 	    }
 
             if(!mLastFrame.mTcw.empty() && !mCurrentFrame.mTcw.empty())
@@ -2071,7 +2070,7 @@ void Tracking::MonocularInitialization()
         int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
 
         // Check if there are enough correspondences
-        if(nmatches<100) //Charbel 100
+        if(nmatches<100)
         {
             delete mpInitializer;
             mpInitializer = static_cast<Initializer*>(NULL);
@@ -2235,10 +2234,12 @@ void Tracking::CreateInitialMapMonocular()
     double aux = (mCurrentFrame.mTimeStamp-mLastFrame.mTimeStamp)/(mCurrentFrame.mTimeStamp-mInitialFrame.mTimeStamp);
     phi *= aux;
 
-    if(mTime_LocalMapTrack > 1000000.0)	//Charbel
+    if(!mLastFrame.mTcw.empty())// Charbel
     {
 	mFrameBeforeLast = mLastFrame;
+	cout << "mFrameBeforeLast: " << mFrameBeforeLast.mTcw << endl << endl;
     }
+    cout << "mFrameBeforeLast: " << mFrameBeforeLast.mTcw << endl << endl;
 	
     mLastFrame = Frame(mCurrentFrame);
 
@@ -2462,8 +2463,17 @@ bool Tracking::TrackWithMotionModel()
     }
     else
     {
-	if(mTime_LocalMapTrack > 1000000.0) //Charbel   
-	    mCurrentFrame.SetPose(2*mVelocityBefore*mFrameBeforeLast.mTcw);
+	if(!mLastFrame.mTcw.empty())//mTime_LocalMapTrack > 1000000.0) //Charbel 
+	{  
+	    //mFrameBeforeLast.mTcw.convertTo(mFrameBeforeLast.mTcw,CV_32F);
+	    //cout << "mVelocity: " << mVelocity << endl << endl;
+	    //mCurrentFrame.SetPose(mVelocity*mFrameBeforeLast.mTcw);
+	    //mCurrentFrame.SetPose(mVelocityBefore*mCurrentFrame.mTcw);
+	    //mCurrentFrame.SetPose(mVelocityBefore*mLastFrame.mTcw);
+	    
+	    //cout << "mLastFrame.mTcw: " << mLastFrame.mTcw << endl << endl;
+	    mCurrentFrame.SetPose(mVelocity*mLastFrame.mTcw);
+	}
 	else
 	    mCurrentFrame.SetPose(mVelocity*mLastFrame.mTcw); 
     }
